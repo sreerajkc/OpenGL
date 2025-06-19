@@ -125,6 +125,8 @@ int main(void)
 
 	/* Create a windowed mode window and its OpenGL context */
 	window = glfwCreateWindow(640, 480, "Hello World", NULL, NULL);
+	glfwSwapInterval(1);//Turns the vsync off
+
 	if (!window)
 	{
 		glfwTerminate();
@@ -135,9 +137,11 @@ int main(void)
 	glfwMakeContextCurrent(window);
 
 	if (glewInit() != GLEW_OK)
-	{
-		std::cout << "Error!" << std::endl;
-	}
+		return -1;
+
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
 	// Print the version of OpenGL	
 	std::cout << glGetString(GL_VERSION) << std::endl;
@@ -157,30 +161,50 @@ int main(void)
 		2,3,0
 	};
 
-	unsigned vbo;// vertex buffer object 
+	unsigned int vao;
+	GLCall(glGenVertexArrays(1, &vao));
+	GLCall(glBindVertexArray(vao));
+
+	unsigned int vbo;// vertex buffer object 
 	GLCall(glGenBuffers(1, &vbo));// creates buffer-objects names and store the names array address in buffer;
 	GLCall(glBindBuffer(GL_ARRAY_BUFFER, vbo));
-	GLCall(glBufferData(GL_ARRAY_BUFFER, 6 * 2 * sizeof(float), positions, GL_STATIC_DRAW));
+	GLCall(glBufferData(GL_ARRAY_BUFFER, 4 * 2 * sizeof(float), positions, GL_STATIC_DRAW));
 
 	GLCall(glEnableVertexAttribArray(0));
 	GLCall(glVertexAttribPointer(0, 2, GL_FLOAT, false, sizeof(float) * 2, 0));
 
-	unsigned ibo;// index buffer objects
+	unsigned int ibo;// index buffer objects or element buffer objects
 	GLCall(glGenBuffers(1, &ibo));// creates buffer-objects names and store the names array address in buffer;
 	GLCall(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo));
 	GLCall(glBufferData(GL_ELEMENT_ARRAY_BUFFER, 6 * sizeof(unsigned int), indices, GL_STATIC_DRAW));
 
 	ShaderProgramSource source = ParseShader("res/shaders/Basic.shader"); // path will be relative to the project working directory(Project > Properties > Debugging > Working Directory)
 	unsigned int shaderProgram = CreateShaderProgram(source.VertexSource, source.FragmentSource);
-	GLCall(glUseProgram(shaderProgram));
+
+	//GLCall(glUseProgram(shaderProgram));
+
+	GLCall(glUseProgram(0));
+
+	GLCall(glBindVertexArray(0));
+	GLCall(glBindBuffer(GL_ARRAY_BUFFER, 0));
+	GLCall(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0));
 
 	/* Loop until the user closes the window */
 	while (!glfwWindowShouldClose(window))
 	{
 		/* Render here */
 		glClear(GL_COLOR_BUFFER_BIT);
+		
+		GLCall(glUseProgram(shaderProgram));
 
-		GLCall(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr));
+		GLCall(int location = glGetUniformLocation(shaderProgram, "u_Color"));
+		ASSERT(location != -1);
+		GLCall(glUniform4f(location, abs(sin(glfwGetTime())), 0.0f, 0.0f, 1.0f));
+
+		GLCall(glBindVertexArray(vao));
+		//GLCall(glBindBuffer(GL_ARRAY_BUFFER,vbo));
+		//GLCall(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo));
+		GLCall(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0));
 
 		/* Swap front and back buffers */
 		glfwSwapBuffers(window);
