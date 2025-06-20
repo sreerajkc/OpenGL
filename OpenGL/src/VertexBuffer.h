@@ -3,7 +3,7 @@
 class VertexBuffer
 {
 private:
-	unsigned int m_RendererId; // same as buffer Id, making more abstracted for support of mulitple apis
+	unsigned int m_RendererID; // same as buffer Id, making more abstracted for support of mulitple apis
 public:
 	VertexBuffer(const void* data, unsigned int size);
 	~VertexBuffer();
